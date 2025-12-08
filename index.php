@@ -252,16 +252,24 @@ colorText.addEventListener('change',e=>{
 
 document.querySelectorAll('.icon').forEach(icon=>{
   icon.addEventListener('click',()=>{
+  let div=document.createElement('div');
+  div.innerHTML=icon.innerHTML;
+  if(!div.querySelector('svg').getAttribute('height')){
+    div.querySelector('svg').setAttribute('height','20');
+    div.querySelector('svg').setAttribute('width','20');
+  }
+  let svg_icon=div.innerHTML;
    if(document.querySelector('#apply_settings').checked == false){
-     navigator.clipboard.writeText(icon.innerHTML).then(()=>{
+     navigator.clipboard.writeText(svg_icon).then(()=>{
       notify.classList.add('show');
       setTimeout(()=>notify.classList.remove('show'),1500);
     });
      return;
    }
    
+   
     currentColor='CurrentColor';
-    const svg = icon.innerHTML
+    const svg = svg_icon
       .replace(/fill="[^"]*"/g, `fill="${currentColor}"`)
       .replace(/width="[^"]*"/g, `width="${currentSize}"`)
       .replace(/height="[^"]*"/g, `height="${currentSize}"`);
