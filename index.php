@@ -131,6 +131,7 @@ main {
   box-shadow: 0 2px 8px rgba(0,0,0,.3);
   transition: top .4s;
   z-index: 100;
+  text-transform: capitalize;
 }
 #notify.show { top: 10px; }
 </style>
@@ -252,6 +253,7 @@ colorText.addEventListener('change',e=>{
 
 document.querySelectorAll('.icon').forEach(icon=>{
   icon.addEventListener('click',()=>{
+  
   let div=document.createElement('div');
   div.innerHTML=icon.innerHTML;
   if(!div.querySelector('svg').getAttribute('height')){
@@ -259,8 +261,10 @@ document.querySelectorAll('.icon').forEach(icon=>{
     div.querySelector('svg').setAttribute('width','20');
   }
   let svg_icon=div.innerHTML;
+ 
    if(document.querySelector('#apply_settings').checked == false){
      navigator.clipboard.writeText(svg_icon).then(()=>{
+      notify.innerText=icon.dataset.name + ' Copied';
       notify.classList.add('show');
       setTimeout(()=>notify.classList.remove('show'),1500);
     });
@@ -274,6 +278,7 @@ document.querySelectorAll('.icon').forEach(icon=>{
       .replace(/width="[^"]*"/g, `width="${currentSize}"`)
       .replace(/height="[^"]*"/g, `height="${currentSize}"`);
     navigator.clipboard.writeText(svg).then(()=>{
+      notify.innerText=icon.dataset.name + ' Copied';
       notify.classList.add('show');
       setTimeout(()=>notify.classList.remove('show'),1500);
     });
