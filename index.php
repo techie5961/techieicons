@@ -35,21 +35,31 @@ $svgFiles = $svgMap[$currentFolder] ?? [];
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel='stylesheet' href='./fonts/fonts.css?v=1.0'>
+<link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="TechieIcons" />
+<link rel="manifest" href="site.webmanifest" />
 <title>SVG Icons Viewer</title>
 <style>
 :root {
-  --primary: rgb(108, 92, 230);
-  --bg: #f8f8f8;
+  --primary: rgb(108,92,230);
+  --bg: #222;
 }
 body {
-  font-family: system-ui, sans-serif;
+  font-family: 'SF Pro',system-ui, sans-serif;
   background: var(--bg);
-  color: #222;
+  color: white;
   margin: 0;
   padding: 0;
 }
+*{
+   font-family: 'SF Pro',system-ui, sans-serif;
+}
 header {
-  background: var(--primary);
+  background: #111;
   color: white;
   padding: 1rem;
   display: flex;
@@ -67,6 +77,22 @@ header input[type="search"] {
   border-radius: 6px;
   border: none;
   font-size: 1rem;
+  background:black;
+  color:white;
+  border:none;
+  
+}
+input,select{
+  font-family:'SF Pro',system-ui;
+  font-weight:500;
+  outline:none;
+  background:black;
+  color:white;
+  border:none;
+  border-radius:5px;
+}
+input::placeholder{
+  font-weight:500;
 }
 header select {
   padding: .6rem .8rem;
@@ -104,16 +130,28 @@ main {
   grid-template-columns: repeat(auto-fill,minmax(80px,1fr));
   gap: 1rem;
   transition: background .3s;
+  background:#222 !important;
 }
 .icon {
   text-align: center;
   cursor: pointer;
   user-select: none;
+  background:black;
+  padding:10px;
+  border-radius:5px;
+  aspect-ratio:1;
+  width:60px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
 }
 .icon svg {
-  width:48px;
-  height: 48px;
+  width:40px;
+  height: 40px;
   fill: var(--color,#000);
+  fill:white !important;
   transition: transform .15s;
 }
 .icon:hover svg {
@@ -124,10 +162,10 @@ main {
   top: -60px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--primary);
+  background: #333;
   color: white;
-  padding: .6rem 1rem;
-  border-radius: 6px;
+  padding: 10px 20px;
+  border-radius: 1000px;
   box-shadow: 0 2px 8px rgba(0,0,0,.3);
   transition: top .4s;
   z-index: 100;
@@ -139,8 +177,12 @@ main {
 <body>
 
 <header>
+  <div style="display:flex;flex-direction:row;gap:5px;align-items:center;">
+    <img src="IMG_5471.png" style="height:50px;" alt="Logo">
+  <strong style="font-weight:900;font-size:2rem;color:gold;">TechieIcons</strong>
+  </div>
   <div class="topbar">
-    <input type="search" id="search" placeholder="Search icons...">
+    <input type="search" id="search" placeholder="🔍︎ Search icons...">
     <form method="get">
       <select style="max-width: 200px;" name="folder" onchange="this.form.submit()">
         <?php foreach ($folders as $folder):
@@ -167,7 +209,7 @@ if (empty($svgFiles)) {
 }
 foreach ($svgFiles as $svg):
   $name = basename($svg, '.svg');
-  $content = file_get_contents($svg);
+  $content = str_replace(['fill="black',"fill='black",'fill="#000"',"fill='#000'"],'fill="CurrentColor"',file_get_contents($svg));
   echo "<div class='icon' data-name='".htmlspecialchars(strtolower($name),ENT_QUOTES)."'>".$content."</div>";
 endforeach; 
 ?>
@@ -185,7 +227,7 @@ const colorText = document.getElementById('colorText');
 const notify = document.getElementById('notify');
 const sizeVal = document.getElementById('sizeVal');
 
-let currentColor = '#000000';
+let currentColor = 'white';
 let currentSize = 20;
 
 function applySettings(){
@@ -202,7 +244,7 @@ function adjustBgContrast(color){
   const rgb = ctx.fillStyle.match(/\d+/g)?.map(Number);
   if(!rgb) return;
   const brightness = (rgb[0]*299 + rgb[1]*587 + rgb[2]*114) / 1000;
-  document.body.style.background = brightness > 180 ? '#000' : '#f8f8f8';
+  document.body.style.background = brightness > 180 ? '#000' : '#fff';
   document.body.style.color = brightness > 180 ? '#fff' : '#222';
 }
 

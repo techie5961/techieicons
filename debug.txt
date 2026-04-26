@@ -1,18 +1,34 @@
 <?php
 // ==== CONFIGURATION ====
 $baseDir = __DIR__;
-$svgFiles = [];
+$folders = [];
+$svgMap = [];
 
-// recursively scan for SVG files
-function scanSVGs($dir, &$list) {
+// Recursively find folders containing SVG files
+function scanFolders($dir, &$folders, &$svgMap) {
+    $hasSvg = false;
     foreach (scandir($dir) as $f) {
         if ($f === '.' || $f === '..') continue;
         $path = "$dir/$f";
-        if (is_dir($path)) scanSVGs($path, $list);
-        elseif (str_ends_with(strtolower($f), '.svg')) $list[] = $path;
+        if (is_dir($path)) {
+            $childHasSvg = scanFolders($path, $folders, $svgMap);
+            $hasSvg = $hasSvg || $childHasSvg;
+        } elseif (str_ends_with(strtolower($f), '.svg')) {
+            $svgMap[$dir][] = "$dir/$f";
+            $hasSvg = true;
+        }
     }
+    if ($hasSvg) $folders[] = $dir;
+    return $hasSvg;
 }
-scanSVGs($baseDir, $svgFiles);
+scanFolders($baseDir, $folders, $svgMap);
+
+// Default folder = first one or selected one
+$currentFolder = isset($_GET['folder']) && isset($svgMap[$_GET['folder']])
+    ? $_GET['folder']
+    : ($folders[0] ?? $baseDir);
+
+$svgFiles = $svgMap[$currentFolder] ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -40,8 +56,19 @@ header {
   flex-direction: column;
   gap: .8rem;
 }
+.topbar {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
 header input[type="search"] {
-  width: 100%;
+  flex: 1;
+  padding: .6rem .8rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+}
+header select {
   padding: .6rem .8rem;
   border-radius: 6px;
   border: none;
@@ -84,8 +111,8 @@ main {
   user-select: none;
 }
 .icon svg {
-  width: var(--size,48px);
-  height: var(--size,48px);
+  width:48px;
+  height: 48px;
   fill: var(--color,#000);
   transition: transform .15s;
 }
@@ -104,6 +131,7 @@ main {
   box-shadow: 0 2px 8px rgba(0,0,0,.3);
   transition: top .4s;
   z-index: 100;
+  text-transform: capitalize;
 }
 #notify.show { top: 10px; }
 </style>
@@ -111,21 +139,38 @@ main {
 <body>
 
 <header>
-  <input type="search" id="search" placeholder="Search icons...">
+  <div class="topbar">
+    <input type="search" id="search" placeholder="Search icons...">
+    <form method="get">
+      <select style="max-width: 200px;" name="folder" onchange="this.form.submit()">
+        <?php foreach ($folders as $folder):
+          $rel = str_replace($baseDir.'/', '', $folder);
+          $sel = $folder === $currentFolder ? 'selected' : '';
+          echo "<option value='".htmlspecialchars($folder,ENT_QUOTES)."' $sel>$rel</option>";
+        endforeach; ?>
+      </select>
+    </form>
+  </div>
   <div class="controls">
-    <label>Size <input type="range" id="sizeRange" min="16" max="200" value="48"><span id="sizeVal">48px</span></label>
-    <label>Manual px <input type="number" id="sizeInput" value="48"></label>
+    <label>Size <input type="range" id="sizeRange" min="16" max="200" value="20"><span id="sizeVal">20px</span></label>
+    <label>Manual px <input type="number" id="sizeInput" value="20"></label>
     <label>Color <input type="color" id="colorPicker" value="#000000"></label>
     <label>Hex/RGB <input type="text" id="colorText" placeholder="#000000 or rgb(0,0,0)"></label>
+     <label for="apply_settings">Apply Settings <input id="apply_settings" type="checkbox" checked></label>
   </div>
 </header>
 
 <main id="grid">
-<?php foreach ($svgFiles as $svg):
+<?php 
+if (empty($svgFiles)) {
+  echo "<p style='grid-column:1/-1;text-align:center;opacity:.6;'>No SVG files found in this folder.</p>";
+}
+foreach ($svgFiles as $svg):
   $name = basename($svg, '.svg');
   $content = file_get_contents($svg);
   echo "<div class='icon' data-name='".htmlspecialchars(strtolower($name),ENT_QUOTES)."'>".$content."</div>";
-endforeach; ?>
+endforeach; 
+?>
 </main>
 
 <div id="notify">Copied!</div>
@@ -141,7 +186,7 @@ const notify = document.getElementById('notify');
 const sizeVal = document.getElementById('sizeVal');
 
 let currentColor = '#000000';
-let currentSize = 48;
+let currentSize = 20;
 
 function applySettings(){
   document.documentElement.style.setProperty('--color', currentColor);
@@ -171,11 +216,16 @@ search.addEventListener('input',()=>{
 sizeRange.addEventListener('input',e=>{
   currentSize = +e.target.value;
   sizeInput.value = currentSize;
-  applySettings();
+//  applySettings();
 });
+
 sizeInput.addEventListener('input',e=>{
   let v = parseInt(e.target.value);
-  if(!isNaN(v) && v>0){ currentSize = v; sizeRange.value=v; applySettings(); }
+  if(!isNaN(v) && v>0){ 
+    currentSize = v;
+     sizeRange.value=v;
+   //  applySettings();
+     }
 });
 
 function validColor(str){
@@ -203,11 +253,32 @@ colorText.addEventListener('change',e=>{
 
 document.querySelectorAll('.icon').forEach(icon=>{
   icon.addEventListener('click',()=>{
-    const svg = icon.innerHTML
+  
+  let div=document.createElement('div');
+  div.innerHTML=icon.innerHTML;
+  if(!div.querySelector('svg').getAttribute('height')){
+    div.querySelector('svg').setAttribute('height','20');
+    div.querySelector('svg').setAttribute('width','20');
+  }
+  let svg_icon=div.innerHTML;
+ 
+   if(document.querySelector('#apply_settings').checked == false){
+     navigator.clipboard.writeText(svg_icon).then(()=>{
+      notify.innerText=icon.dataset.name + ' Copied';
+      notify.classList.add('show');
+      setTimeout(()=>notify.classList.remove('show'),1500);
+    });
+     return;
+   }
+   
+   
+    currentColor='CurrentColor';
+    const svg = svg_icon
       .replace(/fill="[^"]*"/g, `fill="${currentColor}"`)
       .replace(/width="[^"]*"/g, `width="${currentSize}"`)
       .replace(/height="[^"]*"/g, `height="${currentSize}"`);
     navigator.clipboard.writeText(svg).then(()=>{
+      notify.innerText=icon.dataset.name + ' Copied';
       notify.classList.add('show');
       setTimeout(()=>notify.classList.remove('show'),1500);
     });
